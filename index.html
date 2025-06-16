@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wesele Kasi i Rafała - Galeria i Księga Gości</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: #FDFBF7;
+            color: #5D4037;
+        }
+        .font-wedding { font-family: 'Dancing Script', cursive; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #C5A47E; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .app-frame {
+            position: relative;
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px -10px rgba(93, 64, 55, 0.2);
+        }
+        .app-frame::before, .app-frame::after {
+            content: ''; position: absolute; width: 40px; height: 40px;
+            border-color: #C5A47E; border-style: solid;
+        }
+        .app-frame::before { top: 20px; left: 20px; border-width: 2px 0 0 2px; }
+        .app-frame::after { bottom: 20px; right: 20px; border-width: 0 2px 2px 0; }
+
+        .main-title-container {
+             border-bottom: 1px solid #E0E0E0;
+             padding-bottom: 2rem;
+             margin-bottom: 2rem;
+        }
+        .section-title {
+            font-family: 'Dancing Script', cursive;
+            color: #5D4037;
+        }
+        .btn-primary { background-color: #8D6E63; color: white; transition: background-color 0.3s; }
+        .btn-primary:hover:not(:disabled) { background-color: #795548; }
+        .btn-primary:disabled { background-color: #BDBDBD; cursor: not-allowed; }
+        .btn-secondary { border: 2px solid #8D6E63; color: #8D6E63; transition: all 0.3s; }
+        .btn-secondary:hover { background-color: #8D6E63; color: white; }
+        .btn-danger { background-color: #EF5350; color: white; }
+        
+        .upload-button.disabled { opacity: 0.5; cursor: not-allowed; }
+        .gallery-item-container { cursor: pointer; position: relative; }
+        .gallery-item-container .download-btn, .gallery-item-container .delete-btn {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.6); color: white;
+            border-radius: 9999px; padding: 0.5rem;
+            opacity: 0; cursor: pointer; transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        .gallery-item-container .download-btn { top: 0.5rem; right: 0.5rem; }
+        .gallery-item-container .delete-btn { top: 0.5rem; left: 0.5rem; background-color: rgba(220, 38, 38, 0.7); }
+        body.admin-view .gallery-item-container .delete-btn, .gallery-item-container:hover .download-btn { opacity: 1; }
+        body.admin-view .gallery-item-container:hover .delete-btn { opacity: 1; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; padding: 1rem;
+        }
+        .lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; padding: 1rem;
+        }
+        .lightbox-content { max-width: 95vw; max-height: 95vh; display: flex; justify-content: center; align-items: center; overflow-y: auto; }
+        .lightbox-content img, .lightbox-content video { max-width: 100%; max-height: 100%; object-fit: contain; flex-shrink: 0; }
+        .lightbox-close, .lightbox-nav { position: absolute; color: white; background-color: rgba(0,0,0,0.3); border: none; font-size: 2rem; cursor: pointer; padding: 0 1rem; user-select: none; transition: background-color 0.2s; }
+        .lightbox-close:hover, .lightbox-nav:hover { background-color: rgba(0,0,0,0.6); }
+        .lightbox-close { top: 1rem; right: 1.5rem; font-size: 2.5rem; }
+        .lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+        .lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+        .wish-card { position: relative; background-color: #FDFBF7; border-left: 4px solid #C5A47E; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        body.admin-view .wish-card:hover .delete-btn { opacity: 1; }
+        .wish-card .delete-btn { position: absolute; top: 0.5rem; right: 0.5rem; opacity: 0; }
+        
+        .nav-tile {
+            background-color: #FDFBF7;
+            border: 2px solid #E0E0E0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .nav-tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px -5px rgba(93, 64, 55, 0.15);
+            border-color: #C5A47E;
+        }
+        .page { animation: page-fade-in 0.5s ease; }
+        @keyframes page-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6">
+
+    <div id="app-container" class="app-frame text-center w-full max-w-6xl mx-auto">
+        <header class="main-title-container">
+            <h2 class="font-wedding text-2xl text-gray-500">Nasze Wesele</h2>
+            <h1 class="font-wedding text-6xl md:text-8xl text-[#5D4037] my-2">Kasia & Rafał</h1>
+        </header>
+        
+        <div id="router-view">
+            <!-- Dynamic content will be injected by JS -->
+        </div>
+
+        <footer class="mt-12 pt-6 border-t border-gray-200">
+            <p class="text-gray-400 text-sm">© 2025 Wszelkie prawa zastrzeżone. <span id="admin-login" class="cursor-pointer">🔒</span></p>
+        </footer>
+    </div>
+    
+    <div id="lightbox" class="lightbox hidden">
+        <button id="lightbox-close" class="lightbox-close">&times;</button>
+        <button id="lightbox-prev" class="lightbox-nav lightbox-prev">&#10094;</button>
+        <button id="lightbox-next" class="lightbox-nav lightbox-next">&#10095;</button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" class="hidden" src="" alt="Pełny ekran">
+            <video id="lightbox-video" class="hidden" src="" controls></video>
+        </div>
+    </div>
+    <div id="story-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full text-left relative app-frame">
+             <button id="story-close-btn" class="absolute top-4 right-4 text-3xl text-gray-500 hover:text-gray-800">&times;</button>
+            <h2 class="section-title text-3xl mb-4">Opowieść z Waszego Dnia</h2>
+            <div id="story-content" class="text-gray-700 whitespace-pre-wrap max-h-[70vh] overflow-y-auto pr-4"></div>
+        </div>
+    </div>
+    <div id="admin-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-left relative app-frame">
+             <button id="admin-close-btn" class="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+            <h2 class="section-title text-3xl mb-4">Logowanie Administratora</h2>
+            <div class="mb-4">
+                <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-1">Hasło:</label>
+                <input type="password" id="admin-password" class="w-full p-2 border border-gray-300 rounded-md">
+                <p id="admin-error" class="text-red-500 text-sm mt-1 hidden">Nieprawidłowe hasło.</p>
+            </div>
+            <button id="admin-submit-btn" class="btn-primary w-full font-bold py-2 px-4 rounded-full">Zaloguj</button>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <p id="confirm-message" class="text-lg mb-6"></p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="btn-secondary py-2 px-4 rounded-md">Anuluj</button>
+                <button id="confirm-ok-btn" class="btn-danger py-2 px-4 rounded-md">Tak, usuń</button>
+            </div>
+        </div>
+    </div>
+     <div id="notification-modal" class="modal-overlay hidden">
+         <div class="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full text-center">
+            <p id="notification-message" class="text-lg mb-6"></p>
+            <button id="notification-ok-btn" class="btn-primary w-full py-2 px-4 rounded-md">OK</button>
+        </div>
+    </div>
+    <div id="loader-overlay" class="fixed inset-0 bg-white bg-opacity-90 z-50 flex flex-col items-center justify-center">
+        <div class="loader"></div>
+        <p id="loader-text" class="mt-4 text-lg text-gray-700">Inicjalizacja...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const ADMIN_PASSWORD = "slub2025";
+            
+            // **FIX:** The firebaseConfig object is now correctly placed.
+            // <<< TUTAJ WKLEJ SWÓJ firebaseConfig Z KROKU 2 Z INSTRUKCJI
+            const firebaseConfig = {
+  		apiKey: "AIzaSyBGB6juSVZC4g28Z25ctzSq-93V7jwoJRE",
+  		authDomain: "nasze-wesele2025.firebaseapp.com",
+  		projectId: "nasze-wesele2025",
+  		storageBucket: "nasze-wesele2025.firebasestorage.app",
+  		messagingSenderId: "652570623922",
+ 		appId: "1:652570623922:web:2db2ebfadebf4b6c64eeab"
+            };
+            // >>> KONIEC MIEJSCA NA KONFIGURACJĘ
+            
+            const appId = firebaseConfig.projectId || 'wedding-app-hybrid-final';
+            const MAX_BASE64_SIZE_MB = 0.9;
+            const MAX_BASE64_SIZE_BYTES = MAX_BASE64_SIZE_MB * 1024 * 1024;
+            
+            let db, auth, storage, currentUserId = null;
+            let galleryItems = [], wishesData = [], quizQuestions = [];
+            let currentLightboxIndex = 0, currentQuestionIndex = 0, userScore = 0;
+            let isAdmin = false;
+
+            let routerView, pageHome, pageGuestbook, pageGallery, pageAiHelper, pageAiQuiz, tileGuestbook, tileGallery, tileAiHelper, tileAiQuiz, backButtons, fileUploadInput, uploadLabel, statusDiv, gallery, progressBarContainer, progressBar, loaderOverlay, loaderText, lightbox, lightboxImg, lightboxVideo, lightboxCloseBtn, lightboxPrevBtn, lightboxNextBtn, guestNameInput, wishTextInput, saveWishBtn, generateWishBtn, wishesList, generateStoryBtn, storyModal, storyContent, storyCloseBtn, adminLoginBtn, aiQuestionInput, askAiBtn, aiAnswerContainer, aiAnswer, quizGameView, quizSummaryView, quizCounter, quizScore, quizQuestionContainer, quizOptionsContainer, quizFeedback, nextQuestionBtn, playAgainBtn, adminModal, adminCloseBtn, adminPasswordInput, adminSubmitBtn, adminError, confirmModal, confirmMessage, confirmOkBtn, confirmCancelBtn, notificationModal, notificationMessage, notificationOkBtn;
+            
+            const knowledgeBase = `
+            --- HARMONOGRAM WESELA ---
+            - 16:00: Ceremonia zaślubin w kościele pw. Najświętszego Serca Pana Jezusa.
+            - 17:30: Powitanie chlebem i solą oraz obiad w Dworku "Leśna Polana".
+            - 19:00: Pierwszy, romantyczny taniec Kasi i Rafała.
+            - 20:30: Krojenie przepysznego, trzypiętrowego tortu weselnego.
+            - 22:00: Tradycyjne oczepiny i zabawy z nagrodami.
+            - 00:00: Podanie gorącego dania - barszcz z krokietem.
+            - 04:00: Przewidywane zakończenie imprezy.
+            --- INFORMACJE O SALI (Dworek "Leśna Polana") ---
+            - Toalety: Znajdują się na lewo od głównego wejścia, przy szatni.
+            - Stół ze słodkościami (Candy Bar): Jest na tarasie.
+            - Miejsce na zewnątrz (ogród): Można wyjść przez duże, przeszklone drzwi przy parkiecie.
+            - Parking: Jest duży i bezpłatny dla wszystkich gości weselnych.
+            --- INNE ---
+            - Prezenty (koperty): Można wrzucać do specjalnego, ozdobnego pudełka, które stoi obok miejsca Pary Młodej.
+            - Poprawiny: Odbędą się następnego dnia o godzinie 13:00 w tym samym miejscu. Zapraszamy serdecznie!
+            - Para Młoda (Kasia i Rafał): Są znani z wielkiego poczucia humoru i miłości do podróży, zwłaszcza do Włoch.
+            --- FAKTY DO QUIZU ---
+            - Ulubiony wspólny serial Kasi i Rafała to "The Office".
+            - Poznali się na koncercie zespołu Queen.
+            - Ich wymarzona podróż poślubna to Japonia.
+            - Rafał panicznie boi się pająków.
+            - Pierwszym zwierzakiem, jakiego razem adoptowali, był kot o imieniu "Klusek".
+            - Kasia jest mistrzynią w pieczeniu sernika.
+            - Ich ulubiona gra planszowa to "Wsiąść do Pociągu".
+            - Rafał oświadczył się Kasi na szczycie góry w Tatrach.
+            - Oboje kibicują drużynie siatkarskiej ZAKSA Kędzierzyn-Koźle.
+            `;
+
+            function showLoader(text) {
+                const loaderTextEl = document.getElementById('loader-text');
+                const loaderOverlayEl = document.getElementById('loader-overlay');
+                if(loaderTextEl) loaderTextEl.textContent = text;
+                if(loaderOverlayEl) loaderOverlayEl.classList.remove('hidden');
+            }
+            function hideLoader() {
+                const loaderOverlayEl = document.getElementById('loader-overlay');
+                if(loaderOverlayEl) loaderOverlayEl.classList.add('hidden');
+            }
+            
+            function navigateTo(pageId) {
+                document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+                const pageToShow = document.getElementById(pageId);
+                if(pageToShow) pageToShow.classList.remove('hidden');
+            }
+
+            function showNotification(message) {
+                notificationMessage.textContent = message;
+                notificationModal.classList.remove('hidden');
+            }
+
+            let confirmCallback = null;
+            function showConfirm(message, callback) {
+                confirmCallback = callback;
+                confirmMessage.textContent = message;
+                confirmModal.classList.remove('hidden');
+            }
+
+            function renderHTML() {
+                routerView = document.getElementById('router-view');
+                if(!routerView) return;
+
+                const homePageHTML = `<div id="page-home" class="page"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8"><div id="tile-guestbook" class="nav-tile"><h2 class="section-title text-3xl mb-3">Księga Gości</h2><p class="text-gray-600 text-sm">Zostaw nam kilka ciepłych słów na pamiątkę.</p></div><div id="tile-gallery" class="nav-tile"><h2 class="section-title text-3xl mb-3">Galeria Wspomnień</h2><p class="text-gray-600 text-sm">Podziel się zdjęciami i filmami z tego dnia.</p></div><div id="tile-ai-helper" class="nav-tile"><h2 class="section-title text-3xl mb-3">Weselne S.O.S.</h2><p class="text-gray-600 text-sm">Zapytaj o coś naszego Drużbę AI.</p></div><div id="tile-ai-quiz" class="nav-tile"><h2 class="section-title text-3xl mb-3">Weselny Quiz</h2><p class="text-gray-600 text-sm">Jak dobrze znasz Parę Młodą?</p></div></div></div>`;
+                const guestbookPageHTML = `<div id="page-guestbook" class="page hidden"><button class="back-button mb-6 btn-secondary py-1 px-4 rounded-full text-sm">← Powrót</button><section><h2 class="section-title text-4xl mb-6">Księga Gości</h2><div class="max-w-2xl mx-auto bg-white/50 p-6 rounded-lg shadow-inner"><div class="mb-4"><label for="guest-name" class="block text-sm font-medium text-gray-700 mb-1 text-left">Twój podpis:</label><input type="text" id="guest-name" class="w-full p-2 border border-gray-300 rounded-md" placeholder="np. Ciocia Krysia i Wujek Staszek"></div><div class="mb-4"><label for="wish-text" class="block text-sm font-medium text-gray-700 mb-1 text-left">Twoje życzenia:</label><textarea id="wish-text" rows="4" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Wpisz tutaj swoje życzenia..."></textarea></div><div class="flex flex-col sm:flex-row gap-4"><button id="save-wish-btn" class="btn-primary w-full font-bold py-2 px-4 rounded-full">Zapisz życzenia</button><button id="generate-wish-btn" class="btn-secondary w-full font-bold py-2 px-4 rounded-full inline-flex items-center justify-center"><span class="mr-2">✨ Potrzebuję inspiracji!</span></button></div></div><div id="wishes-list" class="mt-10 max-w-4xl mx-auto space-y-4"></div></section></div>`;
+                const galleryPageHTML = `<div id="page-gallery" class="page hidden"><button class="back-button mb-6 btn-secondary py-1 px-4 rounded-full text-sm">← Powrót</button><section><h2 class="section-title text-4xl mb-6">Galeria Wspomnień</h2><div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"><label id="upload-label" for="file-upload" class="disabled btn-primary upload-button font-bold py-3 px-6 rounded-full shadow-lg transition-all inline-flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Wybierz plik</label><button id="generate-story-btn" class="btn-secondary font-bold py-3 px-6 rounded-full inline-flex items-center justify-center"><span class="mr-2">✨ Stwórz opowieść ze zdjęć</span></button><input type="file" id="file-upload" class="hidden" accept="image/*,video/*" disabled></div><div id="status" class="mt-4 text-lg h-8 font-semibold"></div><div id="progress-bar-container" class="w-full bg-gray-200 rounded-full h-2.5 mt-4 hidden max-w-md mx-auto"><div id="progress-bar" class="bg-[#8D6E63] h-2.5 rounded-full" style="width: 0%"></div></div><div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8"></div></section></div>`;
+                const aiHelperPageHTML = `<div id="page-ai-helper" class="page hidden"><button class="back-button mb-6 btn-secondary py-1 px-4 rounded-full text-sm">← Powrót</button><section><h2 class="section-title text-4xl mb-6">Zapytaj Drużbę AI</h2><p class="text-gray-600 -mt-4 mb-6 max-w-2xl mx-auto">Możesz zapytać o harmonogram, menu, poprosić o toast lub wymyślenie anegdoty o Młodej Parze!</p><div class="max-w-2xl mx-auto bg-white/50 p-6 rounded-lg shadow-inner"><div class="mb-4"><label for="ai-question" class="block text-sm font-medium text-gray-700 mb-1 text-left">Twoje pytanie:</label><input type="text" id="ai-question" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Np. Wymyśl krótki, zabawny toast dla Młodej Pary"></div><button id="ask-ai-btn" class="btn-primary w-full font-bold py-2 px-4 rounded-full">✨ Zapytaj AI</button></div><div id="ai-answer-container" class="mt-8 max-w-2xl mx-auto text-left hidden"><h3 class="font-wedding text-2xl text-gray-600 mb-2">Drużba AI odpowiada:</h3><div id="ai-answer" class="p-4 bg-[#FDFBF7] rounded-lg wish-card whitespace-pre-wrap"></div></div></section></div>`;
+                const aiQuizPageHTML = `<div id="page-ai-quiz" class="page hidden"><button class="back-button mb-6 btn-secondary py-1 px-4 rounded-full text-sm">← Powrót</button><section><h2 class="section-title text-4xl mb-6">Jak dobrze znasz Parę Młodą?</h2><div id="quiz-game-view"><div class="flex justify-between items-center max-w-2xl mx-auto mb-4 font-semibold"><div id="quiz-counter">Pytanie 1/10</div><div id="quiz-score">Punkty: 0</div></div><div id="quiz-container" class="max-w-2xl mx-auto p-6 bg-white/50 rounded-lg shadow-inner"><div id="quiz-question-container" class="min-h-[100px] flex items-center justify-center text-xl"></div><div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"></div><div id="quiz-feedback" class="mt-4 font-semibold h-6"></div></div><button id="next-question-btn" class="btn-primary mt-6 font-bold py-2 px-6 rounded-full" disabled>Następne pytanie</button></div><div id="quiz-summary-view" class="hidden"><h3 class="section-title text-3xl mb-4">Koniec Quizu!</h3><p id="final-score-text" class="text-2xl mb-4"></p><div id="prize-message" class="hidden p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 max-w-md mx-auto rounded-r-lg"><p class="font-bold">Gratulacje! Perfekcyjny wynik!</p><p>Zgłoś się do Świadka lub Świadkowej po odbiór małej nagrody!</p></div><button id="play-again-btn" class="btn-primary mt-8 font-bold py-3 px-8 rounded-full">Zagraj ponownie</button></div></section></div>`;
+                routerView.innerHTML = homePageHTML + guestbookPageHTML + galleryPageHTML + aiHelperPageHTML + aiQuizPageHTML;
+            }
+
+            function assignDOMElements() {
+                pageHome = document.getElementById('page-home');
+                pageGuestbook = document.getElementById('page-guestbook');
+                pageGallery = document.getElementById('page-gallery');
+                pageAiHelper = document.getElementById('page-ai-helper');
+                pageAiQuiz = document.getElementById('page-ai-quiz');
+                tileGuestbook = document.getElementById('tile-guestbook');
+                tileGallery = document.getElementById('tile-gallery');
+                tileAiHelper = document.getElementById('tile-ai-helper');
+                tileAiQuiz = document.getElementById('tile-ai-quiz');
+                backButtons = document.querySelectorAll('.back-button');
+                fileUploadInput = document.getElementById('file-upload');
+                uploadLabel = document.querySelector('label[for="file-upload"]');
+                statusDiv = document.getElementById('status');
+                gallery = document.getElementById('gallery');
+                progressBarContainer = document.getElementById('progress-bar-container');
+                progressBar = document.getElementById('progress-bar');
+                loaderOverlay = document.getElementById('loader-overlay');
+                loaderText = document.getElementById('loader-text');
+                lightbox = document.getElementById('lightbox');
+                lightboxImg = document.getElementById('lightbox-img');
+                lightboxVideo = document.getElementById('lightbox-video');
+                lightboxCloseBtn = document.getElementById('lightbox-close');
+                lightboxPrevBtn = document.getElementById('lightbox-prev');
+                lightboxNextBtn = document.getElementById('lightbox-next');
+                guestNameInput = document.getElementById('guest-name');
+                wishTextInput = document.getElementById('wish-text');
+                saveWishBtn = document.getElementById('save-wish-btn');
+                generateWishBtn = document.getElementById('generate-wish-btn');
+                wishesList = document.getElementById('wishes-list');
+                generateStoryBtn = document.getElementById('generate-story-btn');
+                storyModal = document.getElementById('story-modal');
+                storyContent = document.getElementById('story-content');
+                storyCloseBtn = document.getElementById('story-close-btn');
+                adminLoginBtn = document.getElementById('admin-login');
+                adminModal = document.getElementById('admin-modal');
+                adminCloseBtn = document.getElementById('admin-close-btn');
+                adminPasswordInput = document.getElementById('admin-password');
+                adminSubmitBtn = document.getElementById('admin-submit-btn');
+                adminError = document.getElementById('admin-error');
+                confirmModal = document.getElementById('confirm-modal');
+                confirmMessage = document.getElementById('confirm-message');
+                confirmOkBtn = document.getElementById('confirm-ok-btn');
+                confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+                notificationModal = document.getElementById('notification-modal');
+                notificationMessage = document.getElementById('notification-message');
+                notificationOkBtn = document.getElementById('notification-ok-btn');
+                aiQuestionInput = document.getElementById('ai-question');
+                askAiBtn = document.getElementById('ask-ai-btn');
+                aiAnswerContainer = document.getElementById('ai-answer-container');
+                aiAnswer = document.getElementById('ai-answer');
+                quizGameView = document.getElementById('quiz-game-view');
+                quizSummaryView = document.getElementById('quiz-summary-view');
+                quizCounter = document.getElementById('quiz-counter');
+                quizScore = document.getElementById('quiz-score');
+                quizQuestionContainer = document.getElementById('quiz-question-container');
+                quizOptionsContainer = document.getElementById('quiz-options-container');
+                quizFeedback = document.getElementById('quiz-feedback');
+                nextQuestionBtn = document.getElementById('next-question-btn');
+                playAgainBtn = document.getElementById('play-again-btn');
+            }
+
+            function setupEventListeners() {
+                tileGuestbook.addEventListener('click', () => navigateTo('page-guestbook'));
+                tileGallery.addEventListener('click', () => navigateTo('page-gallery'));
+                tileAiHelper.addEventListener('click', () => navigateTo('page-ai-helper'));
+                tileAiQuiz.addEventListener('click', () => {
+                    navigateTo('page-ai-quiz');
+                    startNewQuiz();
+                });
+                backButtons.forEach(button => {
+                    button.addEventListener('click', () => navigateTo('page-home'));
+                });
+
+                adminLoginBtn.addEventListener('click', () => adminModal.classList.remove('hidden'));
+                adminCloseBtn.addEventListener('click', () => {
+                    adminModal.classList.add('hidden');
+                    adminError.classList.add('hidden');
+                    adminPasswordInput.value = '';
+                });
+                adminSubmitBtn.addEventListener('click', handleAdminLogin);
+                
+                fileUploadInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.type.startsWith('image/')) {
+                            processFileAsBase64(file);
+                        } else {
+                           showNotification("W tej wersji obsługiwane są tylko zdjęcia.");
+                        }
+                    }
+                });
+                
+                saveWishBtn.addEventListener('click', saveWish);
+                generateWishBtn.addEventListener('click', generateAIWish);
+                generateStoryBtn.addEventListener('click', generatePhotoStory);
+                storyCloseBtn.addEventListener('click', () => storyModal.classList.add('hidden'));
+                askAiBtn.addEventListener('click', generateAIHelperResponse);
+                nextQuestionBtn.addEventListener('click', handleNextQuestion);
+                playAgainBtn.addEventListener('click', startNewQuiz);
+                
+                lightboxCloseBtn.addEventListener('click', closeLightbox);
+                lightboxNextBtn.addEventListener('click', showNext);
+                lightboxPrevBtn.addEventListener('click', showPrev);
+
+                confirmOkBtn.addEventListener('click', () => {
+                    if (confirmCallback) confirmCallback();
+                    confirmModal.classList.add('hidden');
+                });
+                confirmCancelBtn.addEventListener('click', () => {
+                    confirmModal.classList.add('hidden');
+                });
+                notificationOkBtn.addEventListener('click', () => {
+                    notificationModal.classList.add('hidden');
+                });
+            }
+            
+            function setupAuthentication() {
+                 onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        if(statusDiv) statusDiv.textContent = "";
+                        if(fileUploadInput) fileUploadInput.disabled = false;
+                        document.querySelectorAll('.upload-button').forEach(btn => btn.classList.remove('disabled'));
+                        hideLoader();
+                        await listenForFiles();
+                        await listenForWishes();
+                    } else {
+                        showLoader("Logowanie...");
+                        document.querySelectorAll('.upload-button').forEach(btn => btn.classList.add('disabled'));
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (error) {
+                            console.error("CRITICAL ERROR: Anonymous sign-in failed.", error);
+                            if(statusDiv) statusDiv.textContent = "Błąd połączenia. Odśwież stronę.";
+                            hideLoader();
+                        }
+                    }
+                });
+            }
+            
+            function processFileAsBase64(file) {
+                if (file.size > MAX_BASE64_SIZE_BYTES * 2) { 
+                     showNotification(`Zdjęcie jest za duże (maks. ${MAX_BASE64_SIZE_MB} MB).`);
+                     return;
+                }
+                const reader = new FileReader();
+                reader.onloadstart = () => showLoader("Przetwarzanie zdjęcia...");
+                reader.onload = async (event) => {
+                    const base64String = event.target.result;
+                    if (base64String.length > MAX_BASE64_SIZE_BYTES) {
+                         showNotification(`Zdjęcie jest za duże po konwersji (maks. ${MAX_BASE64_SIZE_MB} MB).`);
+                         hideLoader();
+                         return;
+                    }
+                    await saveFileReferenceToPublicDatabase(base64String, 'image_base64');
+                };
+                reader.onerror = (error) => {
+                    console.error("File Reader error:", error);
+                    showNotification("Błąd podczas przetwarzania pliku.");
+                    hideLoader();
+                };
+                reader.readAsDataURL(file);
+            }
+    
+            async function saveFileReferenceToPublicDatabase(content, mediaType) {
+                showLoader("Zapisywanie w galerii...");
+                try {
+                    const galleryCollectionRef = collection(db, `artifacts/${appId}/public/data/gallery`);
+                    await addDoc(galleryCollectionRef, {
+                        content: content,
+                        mediaType: mediaType,
+                        createdAt: serverTimestamp()
+                    });
+                    showNotification("Gotowe! Zdjęcie dodane do galerii.");
+                    if(statusDiv) statusDiv.textContent = "";
+                } catch (error) {
+                    console.error("Error saving to Firestore:", error);
+                    showNotification("Błąd zapisu w galerii.");
+                } finally {
+                    hideLoader();
+                    if(fileUploadInput) fileUploadInput.value = '';
+                }
+            }
+    
+            async function saveWish() {
+                const name = guestNameInput.value.trim();
+                const text = wishTextInput.value.trim();
+                if (!name || !text) {
+                    showNotification("Proszę wypełnić oba pola: podpis i życzenia.");
+                    return;
+                }
+                saveWishBtn.disabled = true;
+                generateWishBtn.disabled = true;
+    
+                try {
+                    const wishesCollectionRef = collection(db, `artifacts/${appId}/public/data/wedding-wishes`);
+                    await addDoc(wishesCollectionRef, { name, text, createdAt: serverTimestamp() });
+                    guestNameInput.value = '';
+                    wishTextInput.value = '';
+                    showNotification("Dziękujemy za piękne życzenia!");
+                } catch (error) {
+                    console.error("Error saving wish:", error);
+                    showNotification("Wystąpił błąd podczas zapisywania życzeń.");
+                } finally {
+                    saveWishBtn.disabled = false;
+                    generateWishBtn.disabled = false;
+                }
+            }
+            
+            async function generateAIWish() {
+                showLoader("AI myśli nad życzeniami...");
+                generateWishBtn.disabled = true;
+                saveWishBtn.disabled = true;
+    
+                const prompt = "Napisz krótkie, serdeczne i oryginalne życzenia ślubne dla Kasi i Rafała. Unikaj oklepanych frazesów. Niech będą pełne ciepła i radości, ale nie za długie (2-3 zdania). Mają być w języku polskim.";
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content.parts?.[0]) {
+                        wishTextInput.value = result.candidates[0].content.parts[0].text.trim();
+                        wishTextInput.focus();
+                    } else {
+                        throw new Error("Invalid AI response.");
+                    }
+                } catch (error) {
+                    console.error("Gemini API error:", error);
+                    showNotification("Niestety, asystent AI ma chwilową przerwę. Spróbuj ponownie później.");
+                } finally {
+                    hideLoader();
+                    generateWishBtn.disabled = false;
+                    saveWishBtn.disabled = false;
+                }
+            }
+    
+            async function generatePhotoStory() {
+                showLoader("AI tworzy opowieść...");
+                
+                const storyImages = galleryItems
+                    .filter(item => item.mediaType === 'image_base64')
+                    .slice(0, 4); 
+    
+                if (storyImages.length < 2) {
+                    hideLoader();
+                    showNotification("Potrzeba co najmniej 2 zdjęć w galerii, aby stworzyć opowieść!");
+                    return;
+                }
+    
+                const prompt = "Jesteś gawędziarzem na weselu. Na podstawie tych zdjęć z wesela Kasi i Rafała, napisz krótką, zabawną i wzruszającą historyjkę łączącą te momenty. Bądź kreatywny i romantyczny. Odpowiedz w języku polskim w formacie markdown.";
+                
+                const contentParts = [ { text: prompt } ];
+    
+                storyImages.forEach(image => {
+                    contentParts.push({
+                        inlineData: {
+                            mimeType: 'image/jpeg',
+                            data: image.content.split(",")[1]
+                        }
+                    });
+                });
+                
+                const payload = { contents: [{ parts: contentParts }] };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    
+                    if (result.candidates?.[0]?.content.parts?.[0]) {
+                        const generatedStory = result.candidates[0].content.parts[0].text;
+                        storyContent.innerHTML = generatedStory.replace(/\n/g, '<br>');
+                        storyModal.classList.remove('hidden');
+                    } else {
+                        throw new Error("Otrzymano nieprawidłową odpowiedź od AI.");
+                    }
+    
+                } catch (error) {
+                    console.error("Gemini Story API error:", error);
+                    showNotification("Niestety, AI nie mogło teraz stworzyć opowieści. Spróbuj ponownie później.");
+                } finally {
+                    hideLoader();
+                }
+            }
+            
+            async function generateAIHelperResponse() {
+                const question = aiQuestionInput.value.trim();
+                if (!question) {
+                    showNotification("Proszę wpisać pytanie!");
+                    return;
+                }
+                showLoader("Drużba AI myśli...");
+                askAiBtn.disabled = true;
+    
+                const prompt = `Jesteś "Drużbą AI" na weselu Kasi i Rafała. Jesteś dowcipny, pomocny i trochę szarmancki.
+                Oto kluczowe informacje o weselu, z których musisz korzystać, odpowiadając na pytania:
+                ${knowledgeBase}
+    
+                Bazując wyłącznie na powyższych informacjach, odpowiedz na następujące pytanie od gościa weselnego: "${question}"
+                Jeśli pytanie wykracza poza te informacje (np. dotyczy sensu życia), odpowiedz kreatywnie i zabawnie w roli drużby, ale zaznacz, że nie masz tej konkretnej informacji.
+                Odpowiedz w języku polskim.`;
+                
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content.parts?.[0]) {
+                        const generatedText = result.candidates[0].content.parts[0].text;
+                        aiAnswer.innerHTML = generatedText.replace(/\n/g, '<br>');
+                        aiAnswerContainer.classList.remove('hidden');
+                    } else {
+                        throw new Error("Invalid AI response.");
+                    }
+                } catch (error) {
+                    console.error("Gemini Helper API error:", error);
+                    showNotification("Niestety, Drużba AI jest chwilowo zajęty przy barze. Spróbuj ponownie później.");
+                } finally {
+                    hideLoader();
+                    askAiBtn.disabled = false;
+                }
+            }
+    
+            function startNewQuiz() {
+                quizGameView.classList.remove('hidden');
+                quizSummaryView.classList.add('hidden');
+                currentQuestionIndex = 0;
+                userScore = 0;
+                updateScoreDisplay();
+                generateAIQuizQuestion();
+            }
+    
+            async function generateAIQuizQuestion() {
+                showLoader("AI wymyśla pytanie...");
+                quizQuestionContainer.innerHTML = '';
+                quizOptionsContainer.innerHTML = '';
+                quizFeedback.innerHTML = '';
+                nextQuestionBtn.disabled = true;
+    
+                const prompt = `Jesteś mistrzem gry na weselu Kasi i Rafała. Na podstawie poniższych faktów o Parze Młodej, stwórz jedno, nowe, unikalne pytanie wielokrotnego wyboru (A, B, C, D), które nie zostało jeszcze zadane w tej sesji. Jedna odpowiedź musi być poprawna, a pozostałe trzy błędne, ale prawdopodobne. Zwróć odpowiedź TYLKO w formacie JSON. Ważne: Wewnątrz wartości tekstowych w JSON nigdy nie używaj znaku cudzysłowu ("). Zastąp go apostrofem (').
+                Fakty: ${knowledgeBase}
+                `;
+    
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "question": { "type": "STRING" },
+                                "options": { "type": "OBJECT", "properties": { "A": { "type": "STRING" }, "B": { "type": "STRING" }, "C": { "type": "STRING" }, "D": { "type": "STRING" } } },
+                                "correctAnswer": { "type": "STRING" }
+                            }
+                        }
+                    }
+                };
+                
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    
+                let rawJsonText = '';
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    rawJsonText = result.candidates[0].content.parts[0].text;
+                    const cleanedJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const quizData = JSON.parse(cleanedJsonText);
+                    
+                    displayQuiz(quizData);
+    
+                } catch (error) {
+                    console.error("Gemini Quiz API error:", error);
+                    if (error instanceof SyntaxError) {
+                        console.error("Problematic JSON text received from API:", rawJsonText);
+                    }
+                    quizQuestionContainer.innerHTML = `<p class="text-red-500">Niestety, AI ma chwilową przerwę. Spróbuj ponownie!</p>`;
+                } finally {
+                    hideLoader();
+                }
+            }
+    
+            function displayQuiz(quizData) {
+                quizCounter.textContent = `Pytanie ${currentQuestionIndex + 1}/10`;
+                quizQuestionContainer.innerHTML = `<p class="text-xl">${quizData.question}</p>`;
+                quizOptionsContainer.innerHTML = '';
+    
+                for (const key in quizData.options) {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'btn-secondary p-4 rounded-lg text-left';
+                    optionBtn.textContent = `${key}: ${quizData.options[key]}`;
+                    optionBtn.addEventListener('click', () => checkAnswer(key, quizData.correctAnswer, optionBtn), { once: true });
+                    quizOptionsContainer.appendChild(optionBtn);
+                }
+            }
+    
+            function checkAnswer(selectedKey, correctKey, button) {
+                quizOptionsContainer.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                if (selectedKey === correctKey) {
+                    userScore++;
+                    updateScoreDisplay();
+                    quizFeedback.textContent = "Świetna odpowiedź!";
+                    quizFeedback.className = 'mt-4 font-semibold h-6 text-green-600';
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('bg-green-600', 'text-white', 'border-green-600');
+                } else {
+                    quizFeedback.textContent = `Prawie! Poprawna odpowiedź to ${correctKey}.`;
+                    quizFeedback.className = 'mt-4 font-semibold h-6 text-red-600';
+                     button.classList.remove('btn-secondary');
+                    button.classList.add('bg-red-600', 'text-white', 'border-red-600');
+                    quizOptionsContainer.querySelectorAll('button').forEach(btn => {
+                        if (btn.textContent.startsWith(correctKey)) {
+                             btn.classList.remove('btn-secondary');
+                             btn.classList.add('bg-green-600', 'text-white', 'border-green-600');
+                        }
+                    });
+                }
+                nextQuestionBtn.disabled = false;
+            }
+            
+            function updateScoreDisplay() {
+                quizScore.textContent = `Punkty: ${userScore}`;
+            }
+    
+            function handleNextQuestion() {
+                currentQuestionIndex++;
+                 if (currentQuestionIndex >= 10) {
+                    showSummary();
+                } else {
+                    generateAIQuizQuestion();
+                }
+            }
+    
+            function showSummary() {
+                quizGameView.classList.add('hidden');
+                quizSummaryView.classList.remove('hidden');
+                const finalScoreTextElement = document.getElementById('final-score-text');
+                const prizeMessageElement = document.getElementById('prize-message');
+                finalScoreTextElement.textContent = `Twój wynik to: ${userScore} na 10 punktów!`;
+                if (userScore === 10) {
+                    prizeMessageElement.classList.remove('hidden');
+                } else {
+                    prizeMessageElement.classList.add('hidden');
+                }
+            }
+            
+            function openLightbox(index) {
+                currentLightboxIndex = index;
+                lightbox.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                showMediaInLightbox(index);
+                window.addEventListener('keydown', handleKeydown);
+            }
+    
+            function closeLightbox() {
+                lightbox.classList.add('hidden');
+                document.body.style.overflow = '';
+                lightboxVideo.pause();
+                window.removeEventListener('keydown', handleKeydown);
+            }
+    
+            function showMediaInLightbox(index) {
+                const item = galleryItems[index];
+                lightboxImg.classList.add('hidden');
+                lightboxVideo.classList.add('hidden');
+                lightboxVideo.src = "";
+                lightboxImg.src = "";
+    
+                if (item.mediaType.startsWith('image')) {
+                    lightboxImg.src = item.content;
+                    lightboxImg.classList.remove('hidden');
+                } else if (item.mediaType.startsWith('video')) {
+                    lightboxVideo.src = item.content;
+                    lightboxVideo.classList.remove('hidden');
+                    lightboxVideo.play().catch(e => console.log("Video autoplay prevented."));
+                }
+            }
+    
+            function showNext() {
+                currentLightboxIndex = (currentLightboxIndex + 1) % galleryItems.length;
+                showMediaInLightbox(currentLightboxIndex);
+            }
+    
+            function showPrev() {
+                currentLightboxIndex = (currentLightboxIndex - 1 + galleryItems.length) % galleryItems.length;
+                showMediaInLightbox(currentLightboxIndex);
+            }
+    
+            function handleKeydown(e) {
+                if (e.key === 'ArrowRight') showNext();
+                if (e.key === 'ArrowLeft') showPrev();
+                if (e.key === 'Escape') closeLightbox();
+            }
+    
+            function setupAdmin() {
+                adminLoginBtn.addEventListener('click', () => {
+                    adminModal.classList.remove('hidden');
+                });
+                adminCloseBtn.addEventListener('click', () => {
+                    adminModal.classList.add('hidden');
+                    adminError.classList.add('hidden');
+                    adminPasswordInput.value = '';
+                });
+                adminSubmitBtn.addEventListener('click', handleAdminLogin);
+            }
+            
+            function handleAdminLogin() {
+                const password = adminPasswordInput.value;
+                if (password === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    document.body.classList.add('admin-view');
+                    adminModal.classList.add('hidden');
+                    adminPasswordInput.value = '';
+                    adminError.classList.add('hidden');
+                    showNotification("Zalogowano jako administrator.");
+                    renderGallery();
+                    renderWishes();
+                } else {
+                    adminError.classList.remove('hidden');
+                }
+            }
+    
+            function renderWishes() {
+                if (!wishesList) return;
+                wishesList.innerHTML = '';
+                if (wishesData.length === 0) {
+                    wishesList.innerHTML = '<p class="text-gray-500 text-center">Bądź pierwszą osobą, która złoży życzenia!</p>';
+                    return;
+                }
+                wishesData.forEach(wish => {
+                    const card = document.createElement('div');
+                    card.className = 'wish-card relative p-4 rounded-lg shadow-sm text-left';
+                    card.innerHTML = `<p class="text-gray-800 italic pr-8">"${wish.text}"</p><p class="text-right font-semibold text-gray-700 mt-2">- ${wish.name}</p>`;
+                    if (isAdmin) {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn p-1';
+                        deleteBtn.innerHTML = '🗑️';
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteWish(wish.id);
+                        });
+                        card.appendChild(deleteBtn);
+                    }
+                    wishesList.appendChild(card);
+                });
+            }
+    
+            function renderGallery() {
+                if (!gallery) return;
+                gallery.innerHTML = '';
+                if (galleryItems.length === 0) {
+                    gallery.innerHTML = '<p class="text-gray-500 col-span-full">Galeria jest jeszcze pusta.</p>';
+                    return;
+                }
+                galleryItems.forEach((fileData, index) => {
+                    const container = document.createElement('div');
+                    container.className = 'gallery-item-container relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden shadow-md';
+                    container.addEventListener('click', (e) => {
+                        if (e.target.closest('.delete-btn') || e.target.closest('.download-btn')) return;
+                        openLightbox(index);
+                    });
+    
+                    let mediaElement;
+                    if (fileData.mediaType.startsWith('image')) {
+                        mediaElement = document.createElement('img');
+                    } else { return; } 
+                    
+                    mediaElement.src = fileData.content;
+                    mediaElement.className = 'w-full h-full object-cover';
+                    
+                    const downloadBtn = document.createElement('a');
+                    downloadBtn.href = fileData.content;
+                    downloadBtn.download = `wesele-kasi-i-rafala-${fileData.id}`;
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`;
+                    
+                    container.appendChild(mediaElement);
+                    container.appendChild(downloadBtn);
+    
+                    if (isAdmin) {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.innerHTML = '🗑️';
+                        deleteBtn.addEventListener('click', (e) => {
+                             e.stopPropagation();
+                             deleteGalleryItem(fileData.id, fileData.content, fileData.mediaType);
+                        });
+                        container.appendChild(deleteBtn);
+                    }
+                    
+                    gallery.appendChild(container);
+                });
+            }
+            
+            async function deleteWish(id) {
+                showConfirm("Czy na pewno chcesz usunąć te życzenia?", async () => {
+                    try {
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/wedding-wishes`, id));
+                        showNotification("Życzenia zostały usunięte.");
+                    } catch (error) {
+                        console.error("Błąd usuwania życzeń:", error);
+                        showNotification("Nie udało się usunąć życzeń.");
+                    }
+                });
+            }
+    
+            async function deleteGalleryItem(id, contentUrl, mediaType) {
+                 showConfirm("Czy na pewno chcesz usunąć ten plik?", async () => {
+                    try {
+                        if (mediaType === 'image_storage' || mediaType === 'video_storage') {
+                            const fileRef = ref(storage, contentUrl);
+                            await deleteObject(fileRef);
+                        }
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/gallery`, id));
+                        showNotification("Plik usunięty z galerii.");
+                    } catch (error) {
+                         console.error("Błąd usuwania pliku z galerii:", error);
+                         showNotification("Nie udało się usunąć pliku. Błąd: " + error.code);
+                    }
+                });
+            }
+            
+            async function listenForFiles() {
+                const galleryCollectionRef = collection(db, `artifacts/${appId}/public/data/gallery`);
+                const q = query(galleryCollectionRef, orderBy('createdAt', 'desc'));
+                onSnapshot(q, (snapshot) => {
+                    galleryItems = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    renderGallery();
+                }, (error) => {
+                    console.error("Error listening for gallery files:", error);
+                    if (statusDiv) statusDiv.textContent = "Błąd ładowania galerii.";
+                });
+            }
+            
+            async function listenForWishes() {
+                const wishesCollectionRef = collection(db, `artifacts/${appId}/public/data/wedding-wishes`);
+                const q = query(wishesCollectionRef, orderBy('createdAt', 'desc'));
+                onSnapshot(q, (snapshot) => {
+                    wishesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    renderWishes();
+                }, (error) => {
+                    console.error("Error listening for wishes:", error);
+                });
+            }
+    
+            renderHTML();
+            assignDOMElements();
+            setupEventListeners();
+            
+            showLoader('Łączenie z serwerem...');
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                storage = getStorage(app);
+                setupAuthentication();
+            } catch (e) {
+                console.error("CRITICAL ERROR: Firebase initialization failed.", e);
+                const statusDiv = document.getElementById('status');
+                if (statusDiv) statusDiv.textContent = "Błąd inicjalizacji.";
+                hideLoader();
+            }
+        });
+
+    </script>
+</body>
+</html>
